@@ -1,4 +1,4 @@
-module github.com/sumitroajiprabowo/routerosv7-restfull-api
+module github.com/nveeser/routeros7
 
 go 1.21.2
 

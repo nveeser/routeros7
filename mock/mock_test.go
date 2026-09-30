@@ -16,11 +16,11 @@ func TestAuth(t *testing.T) {
 	var expectedError error // Change this to the expected error if any
 
 	// Set up the expectations for the Auth method
-	mockAPI.On("Auth", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mockAPI.On("Auth", mock.Anything).
 		Return(expectedResult, expectedError)
 
-	// Execute the Auth function using the mock API
-	result, err := mockAPI.Auth(context.Background(), "host", "user", "password")
+	// Execute the Auth method using the mock API
+	result, err := mockAPI.Auth(context.Background())
 
 	// Assert that the expectations were met
 	mockAPI.AssertExpectations(t)
@@ -41,11 +41,11 @@ func TestPrint(t *testing.T) {
 	var expectedError error // Change this to the expected error if any
 
 	// Set up the expectations for the Print method
-	mockAPI.On("Print", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mockAPI.On("Print", mock.Anything, mock.Anything).
 		Return(expectedResult, expectedError)
 
-	// Execute the Print function using the mock API
-	result, err := mockAPI.Print(context.Background(), "host", "user", "password", "command")
+	// Execute the Print method using the mock API
+	result, err := mockAPI.Print(context.Background(), "command")
 
 	// Assert that the expectations were met
 	mockAPI.AssertExpectations(t)
@@ -66,12 +66,11 @@ func TestAdd(t *testing.T) {
 	var expectedError error // Change this to the expected error if any
 
 	// Set up the expectations for the Add method
-	mockAPI.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mockAPI.On("Add", mock.Anything, mock.Anything, mock.Anything).
 		Return(expectedResult, expectedError)
 
-	// Execute the Add function using the mock API
-	result, err := mockAPI.Add(context.Background(), "host", "user", "password", "command",
-		[]byte("payload"))
+	// Execute the Add method using the mock API
+	result, err := mockAPI.Add(context.Background(), "command", []byte("payload"))
 
 	// Assert that the expectations were met
 	mockAPI.AssertExpectations(t)
@@ -92,11 +91,11 @@ func TestSet(t *testing.T) {
 	var expectedError error // Change this to the expected error if any
 
 	// Set up the expectations for the Set method
-	mockAPI.On("Set", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mockAPI.On("Set", mock.Anything, mock.Anything, mock.Anything).
 		Return(expectedResult, expectedError)
 
-	// Execute the Set function using the mock API
-	result, err := mockAPI.Set(context.Background(), "host", "user", "password", "command", []byte("payload"))
+	// Execute the Set method using the mock API
+	result, err := mockAPI.Set(context.Background(), "command", []byte("payload"))
 
 	// Assert that the expectations were met
 	mockAPI.AssertExpectations(t)
@@ -117,11 +116,11 @@ func TestRemove(t *testing.T) {
 	var expectedError error // Change this to the expected error if any
 
 	// Set up the expectations for the Remove method
-	mockAPI.On("Remove", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mockAPI.On("Remove", mock.Anything, mock.Anything).
 		Return(expectedResult, expectedError)
 
-	// Execute the Remove function using the mock API
-	result, err := mockAPI.Remove(context.Background(), "host", "user", "password", "command")
+	// Execute the Remove method using the mock API
+	result, err := mockAPI.Remove(context.Background(), "command")
 
 	// Assert that the expectations were met
 	mockAPI.AssertExpectations(t)
@@ -142,11 +141,11 @@ func TestRun(t *testing.T) {
 	var expectedError error // Change this to the expected error if any
 
 	// Set up the expectations for the Run method
-	mockAPI.On("Run", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mockAPI.On("Run", mock.Anything, mock.Anything, mock.Anything).
 		Return(expectedResult, expectedError)
 
-	// Execute the Run function using the mock API
-	result, err := mockAPI.Run(context.Background(), "host", "user", "password", "command", []byte("payload"))
+	// Execute the Run method using the mock API
+	result, err := mockAPI.Run(context.Background(), "command", []byte("payload"))
 
 	// Assert that the expectations were met
 	mockAPI.AssertExpectations(t)

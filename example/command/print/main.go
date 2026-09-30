@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sumitroajiprabowo/routerosv7-restfull-api"
+	"github.com/nveeser/routeros7"
 )
 
 // Create constants for the default values for this example application
@@ -14,22 +14,6 @@ const (
 	password = "password"    // Change this to your router's password
 )
 
-// AppConfig struct for this example application configuration values
-type AppConfig struct {
-	Host     string // IP address of the RouterOS device
-	Username string // Username of the RouterOS device
-	Password string // Password of the RouterOS device
-}
-
-// NewAppConfig function to create new AppConfig instance with default values for this example application
-func NewAppConfig(host, username, password string) *AppConfig {
-	return &AppConfig{
-		Host:     host,
-		Username: username,
-		Password: password,
-	}
-}
-
 // DataRetriever interface for retrieving data from RouterOS device
 type DataRetriever interface {
 	GetData(ctx context.Context) (interface{}, error)
@@ -37,39 +21,22 @@ type DataRetriever interface {
 
 // RouterOSDataRetriever struct for retrieving data from RouterOS device
 type RouterOSDataRetriever struct {
-	config *AppConfig
+	client *routerosv7.Client
 }
 
 // NewRouterOSDataRetriever function to create new RouterOSDataRetriever instance
-func NewRouterOSDataRetriever(config *AppConfig) DataRetriever {
-	return &RouterOSDataRetriever{config: config}
+func NewRouterOSDataRetriever(client *routerosv7.Client) DataRetriever {
+	return &RouterOSDataRetriever{client: client}
 }
 
-// authenticate authenticates to the router. If authentication fails, an error is returned.
-func authenticate(routerIP, username, password string) error {
-
-	// Create a config for the router to authenticate
-	config := routerosv7_restfull_api.AuthConfig{
-		Host:     routerIP, // Change this to your router's IP address
-		Username: username, // Change this to your router's username
-		Password: password, // Change this to your router's password
-	}
-
-	// Authenticate to the router
-	_, err := routerosv7_restfull_api.Auth(context.Background(), config)
-	return err
-}
-
-/*
-GetData function to retrieve data from RouterOS device using the config values from the RouterOSDataRetriever
-instance that called this function and return the data as interface{} and error
-*/
+// GetData function to retrieve data from RouterOS device using the config values from the RouterOSDataRetriever
+// instance that called this function and return the data as interface{} and error
 func (r *RouterOSDataRetriever) GetData(ctx context.Context) (interface{}, error) {
 
 	cmd := "ip/address/print" // Change this to the command you want to execute
 
-	// Create a Command using the constructor
-	data, err := routerosv7_restfull_api.Run(ctx, routerIP, username, password, cmd, nil)
+	// Create a Command using the Run method on the client
+	data, err := r.client.Run(ctx, cmd, nil)
 
 	// Check if there is an error
 	if err != nil {
@@ -121,17 +88,21 @@ func PrintJSON(data interface{}) {
 
 // Main function for this example application
 func main() {
-	// Authenticate to the router using the config values from the AppConfig instance
-	err := authenticate(routerIP, username, password)
-
-	// Check if authentication failed
+	// Create a client for the router
+	client, err := routerosv7.NewClient(routerIP, routerosv7.WithCredentials(username, password))
 	if err != nil {
+		fmt.Println("Failed to create client:", err)
+		return
+	}
+
+	// Authenticate to the router
+	if _, err := client.Auth(context.Background()); err != nil {
 		fmt.Println("Authentication failed:", err)
 		return
 	}
 
-	// Create new RouterOSDataRetriever instance with the config values from the AppConfig instance
-	dataRetriever := NewRouterOSDataRetriever(NewAppConfig(routerIP, username, password))
+	// Create new RouterOSDataRetriever instance with the client
+	dataRetriever := NewRouterOSDataRetriever(client)
 
 	// Retrieve data from RouterOS device using the config values from the RouterOSDataRetriever instance
 	data, err := dataRetriever.GetData(context.Background())

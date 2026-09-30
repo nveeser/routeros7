@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sumitroajiprabowo/routerosv7-restfull-api"
 	"strings"
+
+	"github.com/nveeser/routeros7"
 )
 
 // Create constants for the default values for this example application
@@ -17,21 +18,17 @@ const (
 
 // AppConfig struct for this example application configuration values
 type AppConfig struct {
-	Host     string            // IP address of the RouterOS device
-	Username string            // Username of the RouterOS device
-	Password string            // Password of the RouterOS device
-	Command  string            // Command to execute
-	Params   map[string]string // Params for the command
+	Client  *routerosv7.Client // RouterOS client
+	Command string             // Command to execute
+	Params  map[string]string  // Params for the command
 }
 
 // NewAppConfig function to create new AppConfig instance with default values for this example application
-func NewAppConfig(host, username, password, command string, params map[string]string) *AppConfig {
+func NewAppConfig(client *routerosv7.Client, command string, params map[string]string) *AppConfig {
 	return &AppConfig{
-		Host:     host,     // IP address of the RouterOS device
-		Username: username, // Username of the RouterOS device
-		Password: password, // Password of the RouterOS device
-		Command:  command,  // Command to execute
-		Params:   params,   // Params for the command
+		Client:  client,  // RouterOS client
+		Command: command, // Command to execute
+		Params:  params,  // Params for the command
 	}
 }
 
@@ -50,17 +47,6 @@ func NewRouterOSDataRetriever(config *AppConfig) DataRetriever {
 	return &RouterOSDataRetriever{config: config}
 }
 
-// authenticate authenticates to the router. If authentication fails, an error is returned.
-func authenticate(routerIP, username, password string) error {
-	// Authenticate to the router
-	_, err := routerosv7_restfull_api.Auth(context.Background(), routerosv7_restfull_api.AuthConfig{
-		Host:     routerIP, // Change this to your router's IP address
-		Username: username, // Change this to your router's username
-		Password: password, // Change this to your router's password
-	})
-	return err
-}
-
 // GetData function to retrieve data from RouterOS device using the config values from the RouterOSDataRetriever
 func (r *RouterOSDataRetriever) GetData(ctx context.Context) (interface{}, error) {
 
@@ -75,9 +61,8 @@ func (r *RouterOSDataRetriever) GetData(ctx context.Context) (interface{}, error
 	// Create command variable with the command and queryParams
 	command := fmt.Sprintf(r.config.Command, strings.Join(queryParams, "&"))
 
-	// Calling Print function
-	data, err := routerosv7_restfull_api.Print(ctx, r.config.Host, r.config.Username,
-		r.config.Password, command)
+	// Calling Print method on the client
+	data, err := r.config.Client.Print(ctx, command)
 
 	// Check if there is an error
 	if err != nil {
@@ -130,25 +115,29 @@ func PrintJSON(data interface{}) {
 // main function for this example application
 func main() {
 
+	// Create a client for the router
+	client, err := routerosv7.NewClient(routerIP, routerosv7.WithCredentials(username, password))
+	if err != nil {
+		fmt.Println("Failed to create client:", err)
+		return
+	}
+
+	// Authenticate to the router
+	if _, err := client.Auth(context.Background()); err != nil {
+		fmt.Println("Authentication failed:", err)
+		return
+	}
+
+	fmt.Println("Authentication success")
+
 	// Create params variable as map[string]string
 	params := map[string]string{
 		"address":  "192.168.88.1/24",
 		"disabled": "false",
 	}
 
-	// Create config variable with the default values and params
-	config := NewAppConfig(routerIP, username, password, "ip/address?%s", params)
-
-	// Authenticate to the router using the config values from the AppConfig instance
-	err := authenticate(routerIP, username, password)
-
-	// Check if authentication failed
-	if err != nil {
-		fmt.Println("Authentication failed:", err)
-		return
-	}
-
-	fmt.Println("Authentication success")
+	// Create config variable with the client, command and params
+	config := NewAppConfig(client, "ip/address?%s", params)
 
 	// Create new RouterOSDataRetriever instance with the config values from the AppConfig instance
 	dataRetriever := NewRouterOSDataRetriever(config)

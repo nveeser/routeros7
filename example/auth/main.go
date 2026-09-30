@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/sumitroajiprabowo/routerosv7-restfull-api"
+	"github.com/nveeser/routeros7"
 )
 
 // Create a constant for the router's IP address, username, and password
@@ -16,15 +16,14 @@ const (
 // authenticate authenticates to the router. If authentication fails, an error is returned.
 func authenticate(routerIP, username, password string) error {
 
-	// Create a config for the router to authenticate
-	config := routerosv7_restfull_api.AuthConfig{
-		Host:     routerIP, // Change this to your router's IP address
-		Username: username, // Change this to your router's username
-		Password: password, // Change this to your router's password
+	// Create a client for the router
+	client, err := routerosv7.NewClient(routerIP, routerosv7.WithCredentials(username, password))
+	if err != nil {
+		return err
 	}
 
 	// Authenticate to the router
-	_, err := routerosv7_restfull_api.Auth(context.Background(), config)
+	_, err = client.Auth(context.Background())
 	return err
 }
 

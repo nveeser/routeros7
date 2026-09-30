@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sumitroajiprabowo/routerosv7-restfull-api"
+	"github.com/nveeser/routeros7"
 )
 
 // Create constants for the default values for this example application
@@ -24,10 +24,10 @@ type webResponse struct {
 }
 
 // checkData function to check if the data exists in the RouterOS device
-func checkData(ctx context.Context, routerIP, username, password, command, field, value string) (bool, error) {
+func checkData(ctx context.Context, client *routerosv7.Client, command, field, value string) (bool, error) {
 
-	// Create a new PrintRequest using the constructor
-	data, err := routerosv7_restfull_api.Print(ctx, routerIP, username, password, command)
+	// Calling Print method on the client
+	data, err := client.Print(ctx, command)
 
 	if err != nil {
 		return false, err
@@ -51,10 +51,10 @@ func checkData(ctx context.Context, routerIP, username, password, command, field
 }
 
 // getAddressID function to get the ID of the address to be deleted
-func getAddressID(ctx context.Context, routerIP, username, password, command, field, value string) string {
+func getAddressID(ctx context.Context, client *routerosv7.Client, command, field, value string) string {
 
-	// Create a new PrintRequest using the constructor
-	data, err := routerosv7_restfull_api.Print(ctx, routerIP, username, password, command)
+	// Calling Print method on the client
+	data, err := client.Print(ctx, command)
 
 	if err != nil {
 		return ""
@@ -81,12 +81,12 @@ func getAddressID(ctx context.Context, routerIP, username, password, command, fi
 
 // patchData function to patch data to RouterOS device
 func patchData(
-	ctx context.Context, routerIP, username, password, command string,
+	ctx context.Context, client *routerosv7.Client, command string,
 	payload []byte,
 ) (map[string]interface{}, error) {
 
-	// Create a new PatchRequest using the constructor
-	data, err := routerosv7_restfull_api.Set(ctx, routerIP, username, password, command, payload)
+	// Calling Set method on the client
+	data, err := client.Set(ctx, command, payload)
 
 	if err != nil {
 		return nil, err
@@ -99,8 +99,15 @@ func patchData(
 // main function for this example application to delete data from RouterOS device
 func main() {
 
+	// Create a client for the router
+	client, err := routerosv7.NewClient(routerIP, routerosv7.WithCredentials(username, password))
+	if err != nil {
+		fmt.Println("Failed to create client:", err)
+		return
+	}
+
 	// Check if the address already exists in the RouterOS device
-	exists, err := checkData(context.Background(), routerIP, username, password, "ip/address", "address", paramAddress)
+	exists, err := checkData(context.Background(), client, "ip/address", "address", paramAddress)
 	if err != nil {
 		fmt.Println("Failed to check data:", err)
 		return
@@ -130,7 +137,7 @@ func main() {
 	}
 
 	// Perform the PATCH operation
-	command := fmt.Sprintf("ip/address/%s", getAddressID(context.Background(), routerIP, username, password,
+	command := fmt.Sprintf("ip/address/%s", getAddressID(context.Background(), client,
 		"ip/address", "address",
 		paramAddress))
 
@@ -138,7 +145,7 @@ func main() {
 	payload := fmt.Sprintf(`{"comment": "%s"}`, payloadComment)
 
 	// Patch the data
-	if response, err := patchData(context.Background(), routerIP, username, password, command,
+	if response, err := patchData(context.Background(), client, command,
 		[]byte(payload)); err != nil {
 		fmt.Println("Failed to patch data:", err)
 		return

@@ -15,7 +15,7 @@ This library is a wrapper for the RouterOS v7 Rest API. It provides a simple way
 for more info see: https://help.mikrotik.com/docs/display/ROS/REST+API#RESTAPI-Overview
 
 ## Overview
-Package routerosv7_restfull_api functions:
+Package routerosv7 functions:
 - **Auth** - function to authenticate the Mikrotik device
 - **Print** - function to get data record
 - **Add** - function to create a new record
@@ -37,8 +37,8 @@ import (
 
 func main() {
     // Authenticate to the router
-    _, err := routerosv7_restfull_api.Auth(context.Background(),
-        routerosv7_restfull_api.AuthConfig{
+    _, err := routerosv7.Auth(context.Background(),
+        routerosv7.AuthConfig{
             Host:     "192.168.88.1", // Change this to your router's IP address
             Username: "username",      // Change this to your router's username
             Password: "password",     // Change this to your router's password
@@ -64,7 +64,7 @@ import (
 )
 
 func main() {
-	data, err := routerosv7_restfull_api.Print(
+	data, err := routerosv7.Print(
 		context.Background(),
 		"192.168.88.1",                     // Change this to your router's IP address
 		"username",                         // Change this to your router's username
@@ -95,7 +95,7 @@ import (
 
 func main() {
 	payload := fmt.Sprintf(`{"address": "%s","interface": "%s"}`, "192.168.99.1/24", "ether1")
-	data, err := routerosv7_restfull_api.Add(
+	data, err := routerosv7.Add(
 		context.Background(),
 		"192.168.88.1",                     // Change this to your router's IP address
 		"username",                         // Change this to your router's username
@@ -125,7 +125,7 @@ import (
 )
 
 func main() {
-	data, err := routerosv7_restfull_api.Set(
+	data, err := routerosv7.Set(
 		context.Background(),
 		"192.168.88.1",                    // Change this to your router's IP address
 		"username",                        // Change this to your router's username
@@ -156,7 +156,7 @@ import (
 )
 
 func main() {
-	if data, _ := routerosv7_restfull_api.Remove(
+	if data, _ := routerosv7.Remove(
 		context.Background(),
 		"192.168.88.1",   // Change this to your router's IP address
 		"username",       // Change this to your router's username
@@ -184,7 +184,7 @@ import (
 )
 
 func main() {
-	data, err := routerosv7_restfull_api.Run(
+	data, err := routerosv7.Run(
 		context.Background(), // Create a context
 		"192.168.88.1",       // Change this to your router's IP address
 		"username",           // Change this to your router's username
@@ -213,7 +213,7 @@ import (
 )
 
 func main() {
-	data, err := routerosv7_restfull_api.Run(
+	data, err := routerosv7.Run(
 		context.Background(), // Create a context
 		"192.168.88.1",       // Change this to your router's IP address
 		"username",            // Change this to your router's username
@@ -244,7 +244,7 @@ import (
 )
 
 func main() {
-	data, err := routerosv7_restfull_api.Run(
+	data, err := routerosv7.Run(
 		context.Background(), // Create a context
 		"192.168.88.1",       // Change this to your router's IP address
 		"username",            // Change this to your router's username
@@ -273,7 +273,7 @@ import (
 )
 
 func main() {
-	data, err := routerosv7_restfull_api.Run(
+	data, err := routerosv7.Run(
 		context.Background(), // Create a context
 		"192.168.88.1",       // Change this to your router's IP address
 		"username",           // Change this to your router's username

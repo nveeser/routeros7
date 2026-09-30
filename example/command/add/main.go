@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sumitroajiprabowo/routerosv7-restfull-api"
+	"github.com/nveeser/routeros7"
 )
 
 // Create constants for the default values for this example application
@@ -24,12 +24,12 @@ type webResponse struct {
 }
 
 // checkIfAddressExists checks if the address already exists
-func checkIfAddressExists(ctx context.Context, routerIP, username, password, address string) (bool, error) {
+func checkIfAddressExists(ctx context.Context, client *routerosv7.Client, address string) (bool, error) {
 
 	cmd := "ip/address"
 
 	// Create a new PrintRequest using the constructor
-	data, err := routerosv7_restfull_api.Print(ctx, routerIP, username, password, cmd)
+	data, err := client.Print(ctx, cmd)
 
 	if err != nil {
 		return false, err
@@ -56,12 +56,12 @@ func checkIfAddressExists(ctx context.Context, routerIP, username, password, add
 
 // addAddress updates an address on the router and returns the response
 func addAddress(
-	ctx context.Context, routerIP, username, password, command string,
+	ctx context.Context, client *routerosv7.Client, command string,
 	payload []byte,
 ) (map[string]interface{}, error) {
 
-	// Create a new Add using the constructor
-	data, err := routerosv7_restfull_api.Run(ctx, routerIP, username, password, command, payload)
+	// Create a new Add using the Run method on the client
+	data, err := client.Run(ctx, command, payload)
 
 	if err != nil {
 		return nil, err
@@ -81,8 +81,15 @@ func main() {
 
 	cmd := "ip/address/add"
 
+	// Create a client for the router
+	client, err := routerosv7.NewClient(routerIP, routerosv7.WithCredentials(username, password))
+	if err != nil {
+		fmt.Println("Failed to create client:", err)
+		return
+	}
+
 	// Check if the address already exists
-	if exists, err := checkIfAddressExists(context.Background(), routerIP, username, password, payloadIpAddr); err != nil {
+	if exists, err := checkIfAddressExists(context.Background(), client, payloadIpAddr); err != nil {
 		fmt.Println("Failed to check if address exists:", err)
 		return
 	} else if exists {
@@ -110,9 +117,9 @@ func main() {
 	// Create payload variable as []byte with the desired payload data
 	payload := fmt.Sprintf(`{"address": "%s","interface": "%s"}`, payloadIpAddr, payloadInterface)
 
-	// Add address with addAddress function and get the response data as map[string]interface{} if there is no error
-	//and print the response data to the console as JSON string
-	response, err := addAddress(context.Background(), routerIP, username, password, cmd, []byte(payload))
+	// Add address with addAddress function and get the response data as map[string]interface{}
+	// and print the response data to the console as JSON string
+	response, err := addAddress(context.Background(), client, cmd, []byte(payload))
 	if err != nil {
 		fmt.Println("Failed to add address:", err)
 		return

@@ -1,4 +1,4 @@
-package routerosv7_restfull_api
+package routerosv7
 
 const (
 	httpProtocol        = "http"                   // httpProtocol is the protocol for HTTP requests
@@ -9,4 +9,6 @@ const (
 	MethodPatch         = "PATCH"                  // MethodPatch is the HTTP method for PATCH requests
 	MethodDelete        = "DELETE"                 // MethodDelete is the HTTP method for DELETE requests
 	tlsHandshakeFailure = "tls: handshake failure" // tlsHandshakeFailure is the error message returned when a TLS handshake fails
+	// defaultUserAgent is the default user agent used by the VyOS API client.
+	defaultUserAgent = "go-routeros7-rest"
 )

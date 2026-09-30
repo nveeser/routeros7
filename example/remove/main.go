@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sumitroajiprabowo/routerosv7-restfull-api"
+
+	"github.com/nveeser/routeros7"
 )
 
 // Create constants for the default values for this example application
@@ -25,11 +26,18 @@ type webResponse struct {
 // main function for this example application to delete data from RouterOS device
 func main() {
 
+	// Create a client for the router
+	client, err := routerosv7.NewClient(routerIP, routerosv7.WithCredentials(username, password))
+	if err != nil {
+		fmt.Println("Failed to create client:", err)
+		return
+	}
+
 	// cmd variable for the command to be executed
 	cmd := "ip/address"
 
 	// Check if the address already exists in the RouterOS device
-	exists, err := checkData(context.Background(), routerIP, username, password, cmd, "address", payloadIPAddress)
+	exists, err := checkData(context.Background(), client, cmd, "address", payloadIPAddress)
 	if err != nil {
 		fmt.Println("Failed to check data:", err)
 		return
@@ -59,12 +67,12 @@ func main() {
 	}
 
 	// Perform the DELETE operation
-	command := fmt.Sprintf("ip/address/%s", getAddressID(context.Background(), routerIP, username, password,
+	command := fmt.Sprintf("ip/address/%s", getAddressID(context.Background(), client,
 		"ip/address", "address",
 		payloadIPAddress))
 
 	// Check if there is an error and print the error message to the console
-	if response, _ := deleteData(context.Background(), routerIP, username, password, command); response != nil {
+	if response, _ := deleteData(context.Background(), client, command); response != nil {
 		// Create jsonError variable
 		jsonError := webResponse{
 			Code:   500,
@@ -107,10 +115,10 @@ func main() {
 }
 
 // checkData function to check if the data exists in the RouterOS device
-func checkData(ctx context.Context, routerIP, username, password, command, field, value string) (bool, error) {
+func checkData(ctx context.Context, client *routerosv7.Client, command, field, value string) (bool, error) {
 
-	// Create a new PrintRequest using the constructor
-	data, err := routerosv7_restfull_api.Print(ctx, routerIP, username, password, command)
+	// Calling Print method on the client
+	data, err := client.Print(ctx, command)
 
 	if err != nil {
 		return false, err
@@ -134,10 +142,10 @@ func checkData(ctx context.Context, routerIP, username, password, command, field
 }
 
 // getAddressID function to get the ID of the address to be deleted
-func getAddressID(ctx context.Context, routerIP, username, password, command, field, value string) string {
+func getAddressID(ctx context.Context, client *routerosv7.Client, command, field, value string) string {
 
-	// Create a new PrintRequest using the constructor
-	data, err := routerosv7_restfull_api.Print(ctx, routerIP, username, password, command)
+	// Calling Print method on the client
+	data, err := client.Print(ctx, command)
 
 	if err != nil {
 		return ""
@@ -163,10 +171,10 @@ func getAddressID(ctx context.Context, routerIP, username, password, command, fi
 }
 
 // deleteData function to delete data from RouterOS device
-func deleteData(ctx context.Context, routerIP, username, password, command string) (interface{}, error) {
+func deleteData(ctx context.Context, client *routerosv7.Client, command string) (interface{}, error) {
 
-	// Create a new DeleteRequest using the constructor
-	data, err := routerosv7_restfull_api.Remove(ctx, routerIP, username, password, command)
+	// Calling Remove method on the client
+	data, err := client.Remove(ctx, command)
 
 	// Check if there is an error
 	if err != nil {
