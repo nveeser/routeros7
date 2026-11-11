@@ -1,4 +1,4 @@
-package routerosv7
+package session
 
 import (
 	"context"
@@ -95,56 +95,66 @@ func TestClientAPIMethods(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Auth", func(t *testing.T) {
-		resp, err := client.Auth(ctx)
+		err := client.Auth(ctx)
 		require.NoError(t, err)
-		assert.NotNil(t, resp)
 		assert.Equal(t, http.MethodGet, capturedMethod)
 		assert.Equal(t, "/rest/system/resource", capturedPath)
 	})
 
 	t.Run("Print", func(t *testing.T) {
-		resp, err := client.Print(ctx, "interface")
+		req := &Request[map[string]string]{Command: "interface"}
+		err := client.Print(ctx, req)
 		require.NoError(t, err)
-		assert.NotNil(t, resp)
+		assert.Equal(t, "success", req.Result["status"])
 		assert.Equal(t, http.MethodGet, capturedMethod)
 		assert.Equal(t, "/rest/interface", capturedPath)
 	})
 
 	t.Run("Add", func(t *testing.T) {
-		payload := []byte(`{"name":"ether2"}`)
-		resp, err := client.Add(ctx, "interface", payload)
+		req := &Request[map[string]string]{
+			Command: "interface",
+			Payload: map[string]string{"name": "ether2"},
+		}
+		err := client.Add(ctx, req)
 		require.NoError(t, err)
-		assert.NotNil(t, resp)
+		assert.Equal(t, "success", req.Result["status"])
 		assert.Equal(t, http.MethodPut, capturedMethod)
 		assert.Equal(t, "/rest/interface", capturedPath)
-		assert.Equal(t, string(payload), capturedBody)
+		assert.Equal(t, `{"name":"ether2"}`, capturedBody)
 	})
 
 	t.Run("Set", func(t *testing.T) {
-		payload := []byte(`{"comment":"disabled"}`)
-		resp, err := client.Set(ctx, "interface/ether1", payload)
+		req := &Request[map[string]string]{
+			Command: "interface/ether1",
+			Payload: map[string]string{"comment": "disabled"},
+		}
+		err := client.Set(ctx, req)
 		require.NoError(t, err)
-		assert.NotNil(t, resp)
+		assert.Equal(t, "success", req.Result["status"])
 		assert.Equal(t, http.MethodPatch, capturedMethod)
 		assert.Equal(t, "/rest/interface/ether1", capturedPath)
-		assert.Equal(t, string(payload), capturedBody)
+		assert.Equal(t, `{"comment":"disabled"}`, capturedBody)
 	})
 
 	t.Run("Remove", func(t *testing.T) {
-		resp, err := client.Remove(ctx, "interface/*1")
+		req := &Request[map[string]string]{Command: "interface/*1"}
+		err := client.Remove(ctx, req)
 		require.NoError(t, err)
-		assert.NotNil(t, resp)
+		assert.Equal(t, "success", req.Result["status"])
 		assert.Equal(t, http.MethodDelete, capturedMethod)
 		assert.Equal(t, "/rest/interface/*1", capturedPath)
 	})
 
 	t.Run("Run", func(t *testing.T) {
-		payload := []byte(`{"target":"8.8.8.8"}`)
-		resp, err := client.Run(ctx, "ping", payload)
+		req := &Request[map[string]string]{
+			Command: "ping",
+			Payload: map[string]string{"target": "8.8.8.8"},
+		}
+		err := client.Run(ctx, req)
 		require.NoError(t, err)
-		assert.NotNil(t, resp)
+		assert.Equal(t, "success", req.Result["status"])
 		assert.Equal(t, http.MethodPost, capturedMethod)
 		assert.Equal(t, "/rest/ping", capturedPath)
-		assert.Equal(t, string(payload), capturedBody)
+		assert.Equal(t, `{"target":"8.8.8.8"}`, capturedBody)
 	})
 }

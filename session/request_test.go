@@ -1,4 +1,4 @@
-package routerosv7
+package session
 
 import (
 	"context"
@@ -40,22 +40,21 @@ func TestIsValidHTTPMethod(t *testing.T) {
 
 func TestCreateRequestBody(t *testing.T) {
 	t.Run("nil payload returns nil", func(t *testing.T) {
-		got := createRequestBody(nil)
-		if got != nil {
-			t.Errorf("expected nil reader, got %v", got)
+		got, err := createRequestBody(nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
-	})
-
-	t.Run("empty slice returns nil", func(t *testing.T) {
-		got := createRequestBody([]byte{})
 		if got != nil {
 			t.Errorf("expected nil reader, got %v", got)
 		}
 	})
 
 	t.Run("non-empty payload returns valid reader", func(t *testing.T) {
-		payload := []byte(`{"name":"test"}`)
-		got := createRequestBody(payload)
+		payload := map[string]string{"name": "test"}
+		got, err := createRequestBody(payload)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		if got == nil {
 			t.Fatalf("expected reader, got nil")
 		}
@@ -63,8 +62,9 @@ func TestCreateRequestBody(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected read error: %v", err)
 		}
-		if string(data) != string(payload) {
-			t.Errorf("got content %q, want %q", string(data), string(payload))
+		expected := `{"name":"test"}`
+		if string(data) != expected {
+			t.Errorf("got content %q, want %q", string(data), expected)
 		}
 	})
 }
@@ -141,10 +141,10 @@ func TestDoRequest(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create client: %v", err)
 		}
-		_, err = client.doRequest(context.Background(), requestConfig{
-			method: "INVALID",
-			path:   "system/resource",
-		})
+		req := &Request[any]{
+			Command: "system/resource",
+		}
+		err = client.doRequest(context.Background(), "INVALID", req)
 		if err == nil || !strings.Contains(err.Error(), "invalid HTTP method") {
 			t.Errorf("expected invalid HTTP method error, got %v", err)
 		}
@@ -173,15 +173,18 @@ func TestDoRequest(t *testing.T) {
 		}
 		client.httpClient = server.Client()
 
-		res, err := client.doRequest(context.Background(), requestConfig{
-			method: http.MethodGet,
-			path:   "interface",
-		})
+		type iface struct {
+			Name string `json:"name"`
+		}
+		req := &Request[[]iface]{
+			Command: "interface",
+		}
+		err = client.doRequest(context.Background(), http.MethodGet, req)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if res == nil {
-			t.Fatalf("expected non-nil response data")
+		if len(req.Result) != 1 || req.Result[0].Name != "ether1" {
+			t.Fatalf("expected [{ether1}], got %+v", req.Result)
 		}
 	})
 
@@ -198,10 +201,10 @@ func TestDoRequest(t *testing.T) {
 		}
 		client.httpClient = server.Client()
 
-		_, err = client.doRequest(context.Background(), requestConfig{
-			method: http.MethodGet,
-			path:   "unknown",
-		})
+		req := &Request[any]{
+			Command: "unknown",
+		}
+		err = client.doRequest(context.Background(), http.MethodGet, req)
 		if err == nil {
 			t.Fatalf("expected error, got nil")
 		}
