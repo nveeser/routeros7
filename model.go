@@ -1,75 +1,8 @@
 package routerosv7
 
 import (
-	"context"
-
 	"github.com/nveeser/routeros7/session"
-	"golang.org/x/sync/errgroup"
 )
-
-type CompositeResource interface {
-	Requests() []session.Requester
-}
-
-type SingletonResource interface {
-	CompositeResource
-	SingletonPath() string
-}
-
-type IdResource interface {
-	CollectionPath() string
-}
-
-type NameResource interface {
-	IdResource
-	Name() string
-}
-
-func Read(ctx context.Context, c *session.Client, result CompositeResource) error {
-	g, cctx := errgroup.WithContext(ctx)
-	g.SetLimit(10)
-	for _, req := range result.Requests() {
-		req := req
-		g.Go(func() error {
-			return c.Print(cctx, req)
-		})
-	}
-	return g.Wait()
-}
-
-func ReadAll[T IdResource](ctx context.Context, c *session.Client, result *[]T) error {
-	return c.Print(ctx, requestAll(result))
-}
-
-func ReadId[T IdResource](ctx context.Context, c *session.Client, result *T, id string) error {
-	return c.Print(ctx, requestId(result, id))
-}
-
-func ReadName[T NameResource](ctx context.Context, c *session.Client, result *T, name string) error {
-	return c.Print(ctx, requestId(result, name))
-}
-
-func requestResource(result CompositeResource) []session.Requester {
-	return result.Requests()
-}
-
-func requestSingle[T SingletonResource](result T) session.Requester {
-	return &session.Request[T]{Command: result.SingletonPath(), Result: result}
-}
-
-func requests(r session.Requester) []session.Requester {
-	return []session.Requester{r}
-}
-
-func requestId[T IdResource](result *T, id string) session.Requester {
-	var r T
-	return &session.Request[*T]{Command: r.CollectionPath() + "/" + id, Result: result}
-}
-
-func requestAll[T IdResource](result *[]T) session.Requester {
-	var r T
-	return &session.Request[*[]T]{Command: r.CollectionPath(), Result: result}
-}
 
 // RouterConfig aggregates all state components.
 type RouterConfig struct {
@@ -79,8 +12,6 @@ type RouterConfig struct {
 	Firewall FirewallConfig `yaml:"firewall,omitempty" json:"firewall,omitempty"`
 	Routing  RoutingConfig  `yaml:"routing,omitempty" json:"routing,omitempty"`
 }
-
-var _ CompositeResource = (*RouterConfig)(nil)
 
 func (r *RouterConfig) Requests() []session.Requester {
 	return concatAll(
@@ -122,7 +53,7 @@ func (r *ClockConfig) SingletonPath() string         { return "system/clock" }
 func (r *ClockConfig) Requests() []session.Requester { return requests(requestSingle(r)) }
 
 type NTPConfig struct {
-	Enabled Mbool  `yaml:"enabled" json:"enabled"`
+	Enabled MBool  `yaml:"enabled" json:"enabled"`
 	Mode    string `yaml:"mode,omitempty" json:"mode,omitempty"`
 	Servers MList  `yaml:"servers" json:"servers"`
 }
@@ -142,17 +73,17 @@ type NetworkConfig struct {
 
 func (r *NetworkConfig) Requests() []session.Requester {
 	return concat(
-		requestAll(&r.Bridges),
-		requestAll(&r.BridgePorts),
-		requestAll(&r.BridgeVLANs),
-		requestAll(&r.VLANs),
-		requestAll(&r.Ethernet))
+		requestSlice(&r.Bridges),
+		requestSlice(&r.BridgePorts),
+		requestSlice(&r.BridgeVLANs),
+		requestSlice(&r.VLANs),
+		requestSlice(&r.Ethernet))
 }
 
 type BridgeConfig struct {
 	Id            string `yaml:"-" json:".id,omitempty"`
 	Name          string `yaml:"name" json:"name"`
-	VlanFiltering Mbool  `yaml:"vlan_filtering" json:"vlan-filtering"`
+	VlanFiltering MBool  `yaml:"vlan_filtering" json:"vlan-filtering"`
 	PVID          string `yaml:"pvid,omitempty" json:"pvid,omitempty"`
 	Comment       string `yaml:"comment,omitempty" json:"comment,omitempty"`
 }
@@ -210,10 +141,10 @@ type IPConfig struct {
 
 func (r *IPConfig) Requests() []session.Requester {
 	return concat(
-		requestAll(&r.Addresses),
+		requestSlice(&r.Addresses),
 		requestSingle(&r.DNS),
-		requestAll(&r.Pools),
-		requestAll(&r.Routes))
+		requestSlice(&r.Pools),
+		requestSlice(&r.Routes))
 }
 
 type AddressConfig struct {
@@ -221,14 +152,14 @@ type AddressConfig struct {
 	Address   string `yaml:"address" json:"address"`
 	Interface string `yaml:"interface" json:"interface"`
 	Comment   string `yaml:"comment,omitempty" json:"comment,omitempty"`
-	Disabled  Mbool  `yaml:"disabled,omitempty" json:"disabled,omitempty"`
+	Disabled  MBool  `yaml:"disabled,omitempty" json:"disabled,omitempty"`
 }
 
 func (r AddressConfig) CollectionPath() string { return "ip/address" }
 
 type DNSConfig struct {
 	Servers        MList  `yaml:"servers,omitempty" json:"servers,omitempty"`
-	AllowRemoteReq Mbool  `yaml:"allow_remote_requests" json:"allow-remote-requests"`
+	AllowRemoteReq MBool  `yaml:"allow_remote_requests" json:"allow-remote-requests"`
 	CacheMaxTTL    string `yaml:"cache_max_ttl,omitempty" json:"cache-max-ttl,omitempty"`
 }
 
@@ -262,8 +193,8 @@ type FirewallConfig struct {
 
 func (r *FirewallConfig) Requests() []session.Requester {
 	return concat(
-		requestAll(&r.FilterRules),
-		requestAll(&r.NATRules))
+		requestSlice(&r.FilterRules),
+		requestSlice(&r.NATRules))
 }
 
 type FirewallFilterConfig struct {
@@ -298,8 +229,9 @@ type RoutingConfig struct {
 
 func (r *RoutingConfig) Requests() []session.Requester {
 	return concat(
-		requestAll(&r.BGPInstances),
-		requestAll(&r.BGPPeers))
+		requestSlice(&r.BGPInstances),
+		requestSlice(&r.BGPPeers),
+	)
 }
 
 type BGPInstanceConfig struct {
@@ -318,17 +250,3 @@ type BGPPeerConfig struct {
 }
 
 func (r BGPPeerConfig) CollectionPath() string { return "routing/bgp/connection" }
-
-func concat(s ...session.Requester) (out []session.Requester) {
-	for _, ss := range s {
-		out = append(out, ss)
-	}
-	return
-}
-
-func concatAll(s ...[]session.Requester) (out []session.Requester) {
-	for _, ss := range s {
-		out = append(out, ss...)
-	}
-	return
-}

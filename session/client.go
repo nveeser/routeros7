@@ -37,7 +37,7 @@ func NewClient(host string, opts ...Option) (*Client, error) {
 		userAgent: defaultUserAgent,
 	}
 	for _, o := range opts {
-		o(c)
+		o.apply(c)
 	}
 	return c, nil
 }

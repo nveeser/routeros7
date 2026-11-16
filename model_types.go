@@ -44,10 +44,10 @@ func (b *MInt) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type Mbool bool
+type MBool bool
 
 // MarshalJSON serializes the bool as a quoted JSON string for RouterOS REST: "true" or "false".
-func (b Mbool) MarshalJSON() ([]byte, error) {
+func (b MBool) MarshalJSON() ([]byte, error) {
 	if b {
 		return []byte(`"true"`), nil
 	}
@@ -56,7 +56,7 @@ func (b Mbool) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON parses RouterOS responses whether returned as strings ("true", "false", "yes", "no")
 // or native JSON booleans (true, false).
-func (b *Mbool) UnmarshalJSON(data []byte) error {
+func (b *MBool) UnmarshalJSON(data []byte) error {
 	if v, ok := toBool(string(data)); ok {
 		*b = v
 		return nil
@@ -64,16 +64,16 @@ func (b *Mbool) UnmarshalJSON(data []byte) error {
 	// Handle quoted string values from RouterOS
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("Mbool: failed to unmarshal %s: %w", string(data), err)
+		return fmt.Errorf("MBool: failed to unmarshal %s: %w", string(data), err)
 	}
 	if v, ok := toBool(s); ok {
 		*b = v
 		return nil
 	}
-	return fmt.Errorf("Mbool: unhandled boolean string value %q", s)
+	return fmt.Errorf("MBool: unhandled boolean string value %q", s)
 }
 
-func toBool(s string) (Mbool, bool) {
+func toBool(s string) (MBool, bool) {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "true", "yes", "1", "enabled":
 		return true, true
